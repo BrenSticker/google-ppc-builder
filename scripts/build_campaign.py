@@ -35,6 +35,26 @@ def slugify(text):
     return text
 
 
+# Matches common US phone formats: (555) 867-5309, 555-867-5309, 5558675309, +15558675309, etc.
+PHONE_PATTERN = re.compile(
+    r'(\+?1[\s.-]?)?'
+    r'(\(?\d{3}\)?[\s.-]?)'
+    r'\d{3}[\s.-]?\d{4}'
+)
+
+
+def strip_phone_numbers(text):
+    """Remove any phone numbers from ad copy — including them is a Google Ads policy violation.
+    Replaces detected phone numbers with 'Call Us Today' so the ad still has a CTA.
+    """
+    if not text:
+        return text
+    cleaned = PHONE_PATTERN.sub('Call Us Today', text)
+    if cleaned != text:
+        print(f"  ⚠️  Phone number removed from ad copy: {repr(text)} → {repr(cleaned)}")
+    return cleaned
+
+
 def build_landing_url(base_domain, ad_group, office_name):
     """Derive the full landing page URL for a given ad group."""
     base = base_domain.rstrip('/')
@@ -191,10 +211,18 @@ def main(client_json_path, output_path):
         headers = reader.fieldnames
         rows = list(reader)
 
-    # Apply text replacements to all rows
+    # Ad copy fields where phone numbers are never allowed (Google Ads policy violation)
+    AD_COPY_FIELDS = [f'Headline {i}' for i in range(1, 16)] + [f'Description {i}' for i in range(1, 5)]
+
+    # Apply text replacements to all rows, then strip phone numbers from ad copy fields
     new_rows = []
     for row in rows:
         new_row = {k: replace_text(v, c) for k, v in row.items()}
+        # Only scrub ad copy fields on actual ad rows, not call asset rows
+        if new_row.get('Ad type', '') not in ('Call',):
+            for field in AD_COPY_FIELDS:
+                if field in new_row:
+                    new_row[field] = strip_phone_numbers(new_row[field])
         new_rows.append(new_row)
 
     # Set per-ad-group landing page URLs
@@ -220,6 +248,11 @@ def main(client_json_path, output_path):
 
     print(f"✅ Campaign CSV written to: {output_path}")
     print(f"   Rows: {len(new_rows)} ({len(rows)} campaign + {len(new_rows)-len(rows)} asset rows)")
+    location_radius = c.get('location_radius', '')
+    if location_radius:
+        print(f"\n📍 LOCATION TARGETING REMINDER:")
+        print(f"   After importing, set location targeting to: {location_radius}")
+        print(f"   In Google Ads: Campaign Settings → Locations → Advanced Search → Radius")
 
 
 if __name__ == '__main__':
