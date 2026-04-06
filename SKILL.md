@@ -15,7 +15,7 @@ The output is a single Google Ads Editor CSV, ready to import — no manual step
 
 ## What Gets Built
 
-- **1 Search campaign** (Manual CPC, Google search only)
+- **1 Search campaign** (Maximize Clicks, Enhanced CPC off, Google search only)
 - **5 ad groups**: Back/Neck Pain · Sciatic Nerve Pain · Chiropractic Near Me · Headaches/Migraines · Office Branding
 - **27 keywords** (Exact + Phrase match)
 - **15 responsive search ads** (3 per ad group, all unique headline variations)
@@ -39,6 +39,7 @@ Read the uploaded PDF and extract these fields:
 | `phone` | "Office Phone Number" |
 | `offer_price` | "Offer Price" — format as "$47" |
 | `daily_budget` | "Daily Ad Spend Budget" — format as "30.00" |
+| `location_radius` | "Audience Location?" — e.g. "10 mile radius from office" or "15 mile radius from office" |
 
 ### Step 2 — Scrape the client's website for assets
 
@@ -100,6 +101,7 @@ Once you have all the data, write it to a JSON file and run the builder script.
   "phone": "(402) 964-2930",
   "offer_price": "$47",
   "daily_budget": "30.00",
+  "location_radius": "10 mile radius from office",
   "landing_page_domain": "davischirone.newpatientspecial.co",
   "sitelinks": [
     {"text": "Back Pain", "desc1": "Get relief for chronic back pain.", "desc2": "Request an appointment today.", "url": "https://davischiropracticomaha.com/services/back-pain/"},
@@ -147,6 +149,7 @@ Share the CSV file link with the user using a `computer://` link. Include a brie
 - Budget
 - Number of ad groups, keywords, ads
 - Assets included (call, sitelinks, callouts, snippets, images)
+- **Location targeting:** Remind the user to set the location radius in Google Ads after importing. Tell them exactly what to set — e.g., "Set location targeting to a 10-mile radius around the office address in Google Ads campaign settings → Locations → Advanced → Radius."
 - Any notes (e.g., if image URLs couldn't be found and need manual upload)
 
 ---
@@ -173,3 +176,7 @@ Always check these before writing the JSON. If a callout or sitelink is over the
 **Images:** If direct image URLs are unavailable (many sites use lazy loading or CDN obfuscation), skip the image asset rows and add a note to the user that images need to be uploaded manually in Google Ads.
 
 **Budget field:** Always format as `"30.00"` (two decimal places, no dollar sign).
+
+**Phone numbers in ad copy:** Never include a phone number in any headline or description — this is a Google Ads policy violation and will cause the ad to be disapproved. Phone numbers belong only in the Call asset. The script will automatically strip any phone-number-like patterns from ad text, but double-check your JSON before running. If you would otherwise write something like "Call (555) 867-5309 Today", write "Call Us Today" instead.
+
+**Location targeting (set manually after import):** The Google Ads Editor CSV does not support radius/proximity targeting. After the client imports the CSV, they must set location targeting manually: Google Ads → Campaign Settings → Locations → Advanced Search → Radius. Use the `location_radius` value from the intake form (e.g., "10 mile radius from office"). Always remind the user of this in your delivery message.
